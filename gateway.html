@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Black Rock — Gateway Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-gray-100 p-6">
+  <h1 class="text-2xl font-bold mb-4">Gateway Monitor</h1>
+  <div class="mb-4">
+    <label class="mr-2">API Base:</label>
+    <input id="apiBase" class="bg-gray-800 px-3 py-2 rounded" value="https://api.yourdomain"/>
+    <button id="connectBtn" class="ml-2 bg-blue-600 px-3 py-2 rounded">Connect WS</button>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gray-900 p-4 rounded">
+      <h2 class="font-semibold mb-2">Incoming MTIs</h2>
+      <ul id="inList" class="text-green-400 text-sm space-y-1 max-h-80 overflow-y-auto"></ul>
+    </div>
+    <div class="bg-gray-900 p-4 rounded">
+      <h2 class="font-semibold mb-2">Outgoing MTIs</h2>
+      <ul id="outList" class="text-blue-400 text-sm space-y-1 max-h-80 overflow-y-auto"></ul>
+    </div>
+    <div class="bg-gray-900 p-4 rounded">
+      <h2 class="font-semibold mb-2">Payouts</h2>
+      <ul id="payList" class="text-yellow-300 text-sm space-y-1 max-h-80 overflow-y-auto"></ul>
+    </div>
+  </div>
+  <script>
+    function connect() {
+      const base = document.getElementById('apiBase').value;
+      const wsUrl = base.replace(/^http/, 'ws') + '/ws';
+      const ws = new WebSocket(wsUrl);
+      const inList = document.getElementById('inList');
+      const outList = document.getElementById('outList');
+      const payList = document.getElementById('payList');
+      ws.onopen = () => console.log('WS connected');
+      ws.onmessage = (evt) => {
+        try {
+          const { topic, data } = JSON.parse(evt.data);
+          const li = document.createElement('li');
+          li.textContent = `${new Date().toLocaleTimeString()} — ${topic} :: ${data.mti || '-'} :: ${JSON.stringify(data.fields || data)}`;
+          if (topic === 'mti.incoming') inList.prepend(li);
+          else if (topic === 'mti.outgoing') outList.prepend(li);
+          else if (topic.startsWith('payout.')) payList.prepend(li);
+        } catch (e) { console.error(e); }
+      };
+      ws.onclose = () => setTimeout(connect, 3000);
+    }
+    document.getElementById('connectBtn').onclick = connect;
+  </script>
+</body>
+</html>
