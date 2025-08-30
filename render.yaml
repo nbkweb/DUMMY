@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: blackrock-frontend
+    env: static
+    buildCommand: ""         # no build step needed for plain HTML
+    staticPublishPath: .     # serve from the repo root (where index.html lives)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
